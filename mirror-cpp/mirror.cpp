@@ -86,7 +86,23 @@ std::string mirror::property_info::to_string(
     return result;
 }
 
-void mirror::class_info::add_property(
+std::string mirror::method_info::to_string(
+    int indent
+) const {
+    assert(indent >= 0);
+
+    std::string result;
+    result += name_type_info::to_string(indent);
+/*
+    if(!parameters.empty()) {
+        result += std::string(indent+1, ' ') + "parameters:\n";
+        for(auto&& i : parameters) { result += i->to_string(indent+2); }
+    }
+*/
+    return result;
+}
+
+void mirror::class_info_base::add_property_impl(
     property_ptr p
 ) {
     assert(p);
@@ -96,7 +112,7 @@ void mirror::class_info::add_property(
     properties.emplace(it, std::move(p));
 }
 
-mirror::property_ptr mirror::class_info::find_property_by_name(
+mirror::property_ptr mirror::class_info_base::find_property_by_name(
     std::string const& name,
     bool search_base
 ) const {
@@ -110,7 +126,7 @@ mirror::property_ptr mirror::class_info::find_property_by_name(
     return nullptr;
 }
 
-std::string mirror::class_info::to_string(
+std::string mirror::class_info_base::to_string(
     int indent
 ) const {
     assert(indent >= 0);
@@ -128,11 +144,16 @@ std::string mirror::class_info::to_string(
         for(auto&& i : properties) { result += i->to_string(indent+2); }
     }
 
+    if(!methods.empty()) {
+        result += std::string(indent+1, ' ') + "methods:\n";
+        for(auto&& i : methods) { result += i->to_string(indent+2); }
+    }
+
     return result;
 }
 
 void mirror::class_registry::add_class(
-    class_ptr c
+    class_base_ptr c
 ) {
     assert(c);
     assert(!find_class_by_name(c->name));
@@ -141,7 +162,7 @@ void mirror::class_registry::add_class(
     classes.emplace(it, std::move(c));
 }
 
-mirror::class_ptr mirror::class_registry::find_class_by_name(
+mirror::class_base_ptr mirror::class_registry::find_class_by_name(
     std::string const& name
 ) const {
     auto it = find_by_name(classes, name);
@@ -150,7 +171,7 @@ mirror::class_ptr mirror::class_registry::find_class_by_name(
     return *it;
 }
 
-mirror::class_ptr mirror::class_registry::find_class_by_type(
+mirror::class_base_ptr mirror::class_registry::find_class_by_type(
     std::type_info const& type
 ) const {
     auto it = find_by_type(classes, type);

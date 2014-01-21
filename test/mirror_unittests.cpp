@@ -28,6 +28,21 @@
 struct A {
     int a;
     int const a_const;
+
+    void func_a() { }
+    void func_b() const { }
+
+    int func_c() { return 42; }
+    int func_d() const { return 42; }
+
+    void func_e(double a) { }
+    void func_f(double a) const { }
+
+    int func_g(double a) { return (int)a; }
+    int func_h(double a) const { return (int)a; }
+
+    int func_i(int a, double b) { return (a + (int)b); }
+    void func_i(double a) const { }
 };
 
 struct B : A {
@@ -58,8 +73,6 @@ CATCH_TEST_CASE(
     reg.add_class(a);
     CATCH_CHECK(reg.find_class_by_name("A").get() == a.get());
     CATCH_CHECK(reg.find_class_by_type<A>().get() == a.get());
-
-    std::cout << a->to_string() << std::endl;
 }
 
 template<typename T1, typename T2>
@@ -92,7 +105,7 @@ CATCH_TEST_CASE(
     "[mirror][register_property]"
 ) {
     auto a = mirror::make_class<A>("A");
-    a->add_property<decltype(A::a)>("a");
+    a->add_property("a", &A::a);
     CATCH_CHECK(a->find_property_by_name("a").get());
 }
 
@@ -101,9 +114,9 @@ CATCH_TEST_CASE(
     "[mirror][register_property]"
 ) {
     auto a = mirror::make_class<A>("A");
-    a->add_property<decltype(A::a)>("a");
+    a->add_property("a", &A::a);
     CATCH_CHECK(a->find_property_by_name("a").get());
-    a->add_property<decltype(A::a_const)>("a_const");
+    a->add_property("a_const", &A::a_const);
     CATCH_CHECK(a->find_property_by_name("a").get());
     CATCH_CHECK(a->find_property_by_name("a_const").get());
 }
@@ -113,8 +126,8 @@ CATCH_TEST_CASE(
     "[mirror][register_property]"
 ) {
     auto a = mirror::make_class<A>("A");
-    a->add_property<decltype(A::a)>("a");
-    a->add_property<decltype(A::a_const)>("a_const");
+    a->add_property("a", &A::a);
+    a->add_property("a_const", &A::a_const);
 
     CATCH_CHECK(a->find_property_by_name("a").get());
     CATCH_CHECK(a->find_property_by_name("a_const").get());
@@ -122,12 +135,10 @@ CATCH_TEST_CASE(
     CATCH_CHECK_FALSE(a->find_property_by_name("b_const").get());
 
     auto b = mirror::make_class<B>("B", a);
-    b->add_property<decltype(B::b)>("b");
-    b->add_property<decltype(B::b_const)>("b_const");
-    b->add_property<decltype(B::a2)>("a2");
-    b->add_property<decltype(B::a2_const)>("a2_const");
-
-    std::cout << b->to_string() << std::endl;
+    b->add_property("b", &B::b);
+    b->add_property("b_const", &B::b_const);
+    b->add_property("a2", &B::a2);
+    b->add_property("a2_const", &B::a2_const);
 
     CATCH_CHECK(b->find_property_by_name("b").get());
     CATCH_CHECK(b->find_property_by_name("b_const").get());
@@ -138,6 +149,28 @@ CATCH_TEST_CASE(
     CATCH_CHECK_FALSE(b->find_property_by_name("a_const").get());   // "a" is in the base class
     CATCH_CHECK(b->find_property_by_name("a", true).get());         // "a" is in the base class
     CATCH_CHECK(b->find_property_by_name("a_const", true).get());   // "a" is in the base class
+}
 
-    std::cout << b->to_string() << std::endl;
+CATCH_TEST_CASE(
+    "Test registering a method",
+    "[mirror][register_method]"
+) {
+    auto ctx = mirror::make_class<A>("A");
+
+    ctx->add_property("a", &A::a);
+    ctx->add_property("a_const", &A::a_const);
+
+    ctx->add_method("func_a", &A::func_a);
+    ctx->add_method("func_b", &A::func_b);
+    ctx->add_method("func_c", &A::func_c);
+    ctx->add_method("func_d", &A::func_d);
+    ctx->add_method("func_e", &A::func_e);
+    ctx->add_method("func_f", &A::func_f);
+    ctx->add_method("func_g", &A::func_g);
+    ctx->add_method("func_h", &A::func_h);
+    
+    ctx->add_method<int, int, double>("func_i", &A::func_i);
+    ctx->add_method<void, double>("func_i", &A::func_i);
+
+    std::cout << ctx->to_string() << std::endl;
 }
