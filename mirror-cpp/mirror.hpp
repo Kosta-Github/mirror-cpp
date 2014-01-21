@@ -25,9 +25,15 @@
 
 #include "mirror-cpp.hpp"
 
-#include <cassert>
 #include <string>
 #include <vector>
+
+
+
+#include <iostream>
+
+
+
 
  // disable warning: class 'ABC' needs to have dll-interface to be used by clients of struct 'XYZ'
 #if defined(_MSC_VER)
@@ -37,31 +43,46 @@
 
 namespace mirror {
 
-    struct class_info {
-        inline class_info(std::string n, std::type_info const& t) : name(std::move(n)), type(t) { assert(!name.empty()); }
+    struct MIRROR_API name_type_info {
+        name_type_info(std::string n, std::type_info const& t);
 
-        std::string name;
+        std::string const name;
         std::type_info const& type;
 
+        std::string to_string(int indent = 0) const;
+    };
+    typedef std::shared_ptr<name_type_info> name_type_ptr;
+
+    struct MIRROR_API property_info : name_type_info {
+        inline property_info(std::string n, std::type_info const& t) : name_type_info(std::move(n), t) { }
+
+        bool read_only;
+
+        std::string to_string(int indent = 0) const;
+    };
+    typedef std::shared_ptr<property_info> property_ptr;
+
+    template<typename T>
+    inline property_ptr make_property(std::string name) {
+        auto res = std::make_shared<property_info>(std::move(name), typeid(T));
+        res->read_only = std::is_const<T>::value;
+        return res;
+    }
+
+    struct MIRROR_API class_info : name_type_info {
+        inline class_info(std::string n, std::type_info const& t) : name_type_info(std::move(n), t) { }
+
         std::shared_ptr<class_info> base_class;
+
+        template<typename T>
+        inline void add_property(std::string name) { add_property(make_property<T>(std::move(name))); }
+        void add_property(property_ptr p);
+        property_ptr find_property_by_name(std::string const& name, bool search_base = false) const;
+        std::vector<property_ptr> properties;
 
         std::string to_string(int indent = 0) const;
     };
     typedef std::shared_ptr<class_info> class_ptr;
-
-    struct MIRROR_API class_registry {
-        void register_class(class_ptr c);
-
-        class_ptr find_by_name(std::string const& name) const;
-        class_ptr find_by_type(std::type_info const& type) const;
-
-        template<typename T>
-        inline class_ptr find_by_type() const { return find_by_type(typeid(T)); }
-
-    private:
-        std::vector<class_ptr> m_classes;
-    };
-
 
     template<typename T>
     inline class_ptr make_class(std::string name, class_ptr base_class = nullptr) {
@@ -69,6 +90,18 @@ namespace mirror {
         res->base_class = base_class;
         return res;
     }
+
+    struct MIRROR_API class_registry {
+        void add_class(class_ptr c);
+
+        class_ptr find_class_by_name(std::string const& name) const;
+
+        template<typename T>
+        inline class_ptr find_class_by_type() const { return find_class_by_type(typeid(T)); }
+        class_ptr find_class_by_type(std::type_info const& type) const;
+
+        std::vector<class_ptr> classes;
+    };
 
 } // namespace mirror
 

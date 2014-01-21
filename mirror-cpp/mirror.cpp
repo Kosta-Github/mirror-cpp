@@ -23,65 +23,137 @@
 
 #include "mirror.hpp"
 
+#include <cassert>
+
+template<typename CONT>
+static inline auto find_by_name(
+    CONT&& cont,
+    std::string const& name
+) -> decltype(cont.begin()) {
+    assert(!name.empty());
+
+    // use linear search based on the type
+    typedef decltype(*cont.begin()) T;
+    return std::find_if(
+        cont.begin(), cont.end(),
+        [&](T const& c) { return (c->name == name); }
+    );
+}
+
+template<typename CONT>
+static inline auto find_by_type(
+    CONT&& cont,
+    std::type_info const& type
+) -> decltype(cont.begin()) {
+
+    // use linear search based on the type
+    typedef decltype(*cont.begin()) T;
+    return std::find_if(
+        cont.begin(), cont.end(),
+        [&](T const& c) { return (c->type == type); }
+    );
+}
+
+mirror::name_type_info::name_type_info(
+    std::string n,
+    std::type_info const& t
+) :
+    name(std::move(n)),
+    type(t)
+{
+    assert(!name.empty());
+}
+
+std::string mirror::name_type_info::to_string(
+    int indent
+) const {
+    assert(indent >= 0);
+
+    std::string result;
+    result += std::string(indent,   ' ') + "name: " + name + "\n";
+    result += std::string(indent+1, ' ') + "type: " + type.name() + "\n";
+    return result;
+}
+
+std::string mirror::property_info::to_string(
+    int indent
+) const {
+    assert(indent >= 0);
+
+    std::string result;
+    result += name_type_info::to_string(indent);
+    result += std::string(indent+1, ' ') + "read_only: " + (read_only ? "true" : "false") + "\n";
+    return result;
+}
+
+void mirror::class_info::add_property(
+    property_ptr p
+) {
+    assert(p);
+    assert(!find_property_by_name(p->name, true));
+
+    auto it = find_by_name(properties, name);
+    properties.emplace(it, std::move(p));
+}
+
+mirror::property_ptr mirror::class_info::find_property_by_name(
+    std::string const& name,
+    bool search_base
+) const {
+    auto it = find_by_name(properties, name);
+    if((it != properties.end()) && ((*it)->name == name)) { return *it; }
+
+    if(search_base && base_class) {
+        return base_class->find_property_by_name(name, search_base);
+    }
+
+    return nullptr;
+}
+
 std::string mirror::class_info::to_string(
     int indent
 ) const {
     assert(indent >= 0);
 
     std::string result;
-    result += std::string(" ", indent) + "name: " + name + "\n";
-    result += std::string(" ", indent) + "type: " + type.name() + "\n";
+    result += name_type_info::to_string(indent);
 
-    result += std::string(" ", indent) + "base: " + (base_class ? base_class->name : "<none>") + "\n";
-    if(base_class) { result += base_class->to_string(indent + 1) + "\n"; }
+    if(base_class) {
+        result += std::string(indent+1, ' ') + "base: " + base_class->name + "\n";
+        result += base_class->to_string(indent+2) + "\n";
+    }
+
+    if(!properties.empty()) {
+        result += std::string(indent+1, ' ') + "properties:\n";
+        for(auto&& i : properties) { result += i->to_string(indent+2); }
+    }
 
     return result;
 }
 
-void mirror::class_registry::register_class(
+void mirror::class_registry::add_class(
     class_ptr c
 ) {
     assert(c);
-    assert(!find_by_name(c->name));
+    assert(!find_class_by_name(c->name));
 
-    // use binary/logarithmic search based on the name
-    auto it = std::lower_bound(
-        m_classes.begin(), m_classes.end(), c->name,
-        [](class_ptr const& c, std::string const& n) {
-            return (c->name < n);
-        }
-    );
-
-    m_classes.emplace(it, std::move(c));
+    auto it = find_by_name(classes, c->name);
+    classes.emplace(it, std::move(c));
 }
 
-mirror::class_ptr mirror::class_registry::find_by_name(
+mirror::class_ptr mirror::class_registry::find_class_by_name(
     std::string const& name
 ) const {
-    // use binary/logarithmic search based on the name
-    auto it = std::lower_bound(
-        m_classes.begin(), m_classes.end(), name,
-        [](class_ptr const& c, std::string const& n) {
-            return (c->name < n);
-        }
-    );
-
-    if(it == m_classes.end()) { return nullptr; }
+    auto it = find_by_name(classes, name);
+    if(it == classes.end()) { return nullptr; }
     if((*it)->name != name) { return nullptr; }
     return *it;
 }
 
-mirror::class_ptr mirror::class_registry::find_by_type(
+mirror::class_ptr mirror::class_registry::find_class_by_type(
     std::type_info const& type
 ) const {
-    // use linear search based on the type
-    auto it = std::find_if(
-        m_classes.begin(), m_classes.end(),
-        [&](class_ptr const& c) {
-            return (c->type == type);
-        }
-    );
-    
-    if(it == m_classes.end()) { return nullptr; }
+    auto it = find_by_type(classes, type);
+    if(it == classes.end()) { return nullptr; }
     return *it;
 }
