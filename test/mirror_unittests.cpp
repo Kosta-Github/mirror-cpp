@@ -52,4 +52,6 @@ CATCH_TEST_CASE(
     reg.register_class(a);
     CATCH_CHECK(reg.find_by_name("A").get() == a.get());
     CATCH_CHECK(reg.find_by_type<A>().get() == a.get());
+
+    std::cout << a->to_string() << std::endl;
 }

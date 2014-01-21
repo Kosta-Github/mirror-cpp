@@ -23,6 +23,21 @@
 
 #include "mirror.hpp"
 
+std::string mirror::class_info::to_string(
+    int indent
+) const {
+    assert(indent >= 0);
+
+    std::string result;
+    result += std::string(" ", indent) + "name: " + name + "\n";
+    result += std::string(" ", indent) + "type: " + type.name() + "\n";
+
+    result += std::string(" ", indent) + "base: " + (base_class ? base_class->name : "<none>") + "\n";
+    if(base_class) { result += base_class->to_string(indent + 1) + "\n"; }
+
+    return result;
+}
+
 void mirror::class_registry::register_class(
     class_ptr c
 ) {
