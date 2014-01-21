@@ -23,6 +23,50 @@
 
 #include "mirror.hpp"
 
-static bool dummy() {
-	return true;
+void mirror::class_registry::register_class(
+    class_ptr c
+) {
+    assert(c);
+    assert(!find_by_name(c->name));
+
+    // use binary/logarithmic search based on the name
+    auto it = std::lower_bound(
+        m_classes.begin(), m_classes.end(), c->name,
+        [](class_ptr const& c, std::string const& n) {
+            return (c->name < n);
+        }
+    );
+
+    m_classes.emplace(it, std::move(c));
+}
+
+mirror::class_ptr mirror::class_registry::find_by_name(
+    std::string const& name
+) const {
+    // use binary/logarithmic search based on the name
+    auto it = std::lower_bound(
+        m_classes.begin(), m_classes.end(), name,
+        [](class_ptr const& c, std::string const& n) {
+            return (c->name < n);
+        }
+    );
+
+    if(it == m_classes.end()) { return nullptr; }
+    if((*it)->name != name) { return nullptr; }
+    return *it;
+}
+
+mirror::class_ptr mirror::class_registry::find_by_type(
+    std::type_info const& type
+) const {
+    // use linear search based on the type
+    auto it = std::find_if(
+        m_classes.begin(), m_classes.end(),
+        [&](class_ptr const& c) {
+            return (c->type == type);
+        }
+    );
+    
+    if(it == m_classes.end()) { return nullptr; }
+    return *it;
 }

@@ -25,6 +25,10 @@
 
 #include "mirror-cpp.hpp"
 
+#include <cassert>
+#include <string>
+#include <vector>
+
  // disable warning: class 'ABC' needs to have dll-interface to be used by clients of struct 'XYZ'
 #if defined(_MSC_VER)
 #   pragma warning(push)
@@ -32,6 +36,39 @@
 #endif // defined(_MSC_VER)
 
 namespace mirror {
+
+    struct class_info {
+        inline class_info(std::string n, std::type_info const& t) : name(std::move(n)), type(t) { assert(!name.empty()); }
+
+        std::string name;
+        std::type_info const& type;
+
+        std::shared_ptr<class_info> base_class;
+
+        std::string to_string(int indent = 0) const;
+    };
+    typedef std::shared_ptr<class_info> class_ptr;
+
+    struct MIRROR_API class_registry {
+        void register_class(class_ptr c);
+
+        class_ptr find_by_name(std::string const& name) const;
+        class_ptr find_by_type(std::type_info const& type) const;
+
+        template<typename T>
+        inline class_ptr find_by_type() const { return find_by_type(typeid(T)); }
+
+    private:
+        std::vector<class_ptr> m_classes;
+    };
+
+
+    template<typename T>
+    inline class_ptr make_class(std::string name, class_ptr base_class = nullptr) {
+        auto res = std::make_shared<class_info>(std::move(name), typeid(T));
+        res->base_class = base_class;
+        return res;
+    }
 
 } // namespace mirror
 

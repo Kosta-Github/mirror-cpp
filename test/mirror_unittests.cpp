@@ -25,8 +25,31 @@
 
 #include <mirror-cpp/mirror.hpp>
 
+struct A {
+    int a;
+};
+
+struct B : A {
+    double b;
+};
+
+struct C : B {
+    std::string c;
+};
+
 CATCH_TEST_CASE(
-    "Test ...",
+    "Test registering a class",
     "[mirror][register_class]"
 ) {
+    auto reg = mirror::class_registry();
+
+    CATCH_CHECK_FALSE(reg.find_by_name("A").get());
+    CATCH_CHECK_FALSE(reg.find_by_type<A>().get());
+
+    auto a = mirror::make_class<A>("A");
+    CATCH_REQUIRE(a.get());
+
+    reg.register_class(a);
+    CATCH_CHECK(reg.find_by_name("A").get() == a.get());
+    CATCH_CHECK(reg.find_by_type<A>().get() == a.get());
 }
