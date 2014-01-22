@@ -27,7 +27,7 @@
 #  if defined(mirror_cpp_EXPORTS)
 #    define MIRROR_API __declspec(dllexport)
 #  else // defined(mirror_cpp_EXPORTS)
-#    define HTTP_API __declspec(dllimport)
+#    define MIRROR_API __declspec(dllimport)
 #    pragma comment(lib, "mirror-cpp.lib")
 #  endif // defined(mirror_cpp_EXPORTS)
 #else // defined(WIN32)

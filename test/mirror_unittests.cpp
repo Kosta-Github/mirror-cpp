@@ -81,7 +81,7 @@ static void check_prop(bool const read_only) {
     CATCH_REQUIRE(p.get());
     CATCH_CHECK(p->name == "prop");
     CATCH_CHECK(p->type == typeid(T2));
-    CATCH_CHECK((int)p->read_only == read_only);
+    CATCH_CHECK(p->read_only == read_only);
 }
 
 CATCH_TEST_CASE(

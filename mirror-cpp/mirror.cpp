@@ -23,6 +23,7 @@
 
 #include "mirror.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 template<typename CONT>

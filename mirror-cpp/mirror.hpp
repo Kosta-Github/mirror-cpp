@@ -25,6 +25,7 @@
 
 #include "mirror-cpp.hpp"
 
+#include <memory>
 #include <string>
 #include <vector>
 
