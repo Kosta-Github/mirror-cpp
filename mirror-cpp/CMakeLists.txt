@@ -8,4 +8,5 @@ add_library(
 	mirror-cpp.hpp
 	mirror.cpp
 	mirror.hpp
+	value.hpp
 )

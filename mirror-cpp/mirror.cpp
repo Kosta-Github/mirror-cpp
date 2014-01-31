@@ -55,16 +55,6 @@ static inline auto find_by_type(
     );
 }
 
-mirror::name_type_info::name_type_info(
-    std::string n,
-    std::type_info const& t
-) :
-    name(std::move(n)),
-    type(t)
-{
-    assert(!name.empty());
-}
-
 std::string mirror::name_type_info::to_string(
     int indent
 ) const {
@@ -127,6 +117,30 @@ mirror::property_ptr mirror::class_info_base::find_property_by_name(
     return nullptr;
 }
 
+mirror::value mirror::class_info_base::invoke(
+    context& ctx,
+    value const& obj,
+    std::string const& method,
+    values const& args
+) const {
+    for(auto&& m : methods) {
+        if((m->name == method) && (m->num_args == args.size())) {
+            return m->invoke(ctx, obj, args);
+        }
+    }
+    if(base_class) {
+        return base_class->invoke(ctx, obj, method, args);
+    }
+    throw std::runtime_error("method not found: " + method);
+}
+
+void mirror::class_info_base::add_method_impl(
+    method_ptr m
+) {
+    assert(m);
+    methods.emplace_back(std::move(m));
+}
+
 std::string mirror::class_info_base::to_string(
     int indent
 ) const {
@@ -178,4 +192,13 @@ mirror::class_base_ptr mirror::class_registry::find_class_by_type(
     auto it = find_by_type(classes, type);
     if(it == classes.end()) { return nullptr; }
     return *it;
+}
+
+mirror::value mirror::class_registry::invoke(
+    context& ctx,
+    value const& obj,
+    std::string const& method,
+    values const& args
+) const {
+    throw std::runtime_error("not implemented: " + method);
 }

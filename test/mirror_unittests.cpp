@@ -26,6 +26,8 @@
 #include <mirror-cpp/mirror.hpp>
 
 struct A {
+    A() : a(42), a_const(15) { }
+
     int a;
     int const a_const;
 
@@ -173,4 +175,32 @@ CATCH_TEST_CASE(
     ctx->add_method<void, double>("func_i", &A::func_i);
 
     std::cout << ctx->to_string() << std::endl;
+}
+
+CATCH_TEST_CASE(
+    "Test invoking a simple method",
+    "[mirror][method][invoke]"
+) {
+    auto cls = mirror::make_class<A>("A");
+    cls->add_method("func_a", &A::func_a);
+
+    auto reg = mirror::class_registry();
+    reg.add_class(cls);
+
+    auto a = std::make_shared<A>();
+
+    auto ctx = mirror::context();
+    auto a_val = mirror::value(a);
+    std::cout << "a_val type: " << a_val.m_type->name() << std::endl;
+
+    auto int_val = mirror::value(static_cast<int64_t>(42));
+    std::cout << "int_val type: " << int_val.m_type->name() << std::endl;
+
+    auto str_val = mirror::value("Hello world");
+    std::cout << "str_val type: " << str_val.m_type->name() << std::endl;
+
+    auto nul_val = mirror::value();
+    std::cout << "nul_val type: " << nul_val.m_type->name() << std::endl;
+
+    reg.invoke(ctx, a_val, "func_a", mirror::values());
 }

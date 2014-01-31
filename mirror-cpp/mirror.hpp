@@ -24,10 +24,9 @@
 #pragma once
 
 #include "mirror-cpp.hpp"
+#include "value.hpp"
 
-#include <memory>
-#include <string>
-#include <vector>
+#include <functional>
 
 
 
@@ -44,10 +43,14 @@
 
 namespace mirror {
 
+    struct context { };
+
     struct MIRROR_API name_type_info {
         virtual ~name_type_info() { }
 
-        name_type_info(std::string n, std::type_info const& t);
+        inline name_type_info(
+            std::string n, std::type_info const& t
+        ) : name(std::move(n)), type(t) { assert(!name.empty()); }
 
         std::string const name;
         std::type_info const& type;
@@ -57,9 +60,12 @@ namespace mirror {
     typedef std::shared_ptr<name_type_info> name_type_ptr;
 
     struct MIRROR_API property_info : name_type_info {
-        inline property_info(std::string n, std::type_info const& t) : name_type_info(std::move(n), t) { }
+        inline property_info(
+            std::string n, std::type_info const& t,
+            bool ro
+        ) : name_type_info(std::move(n), t), read_only(ro) { }
 
-        bool read_only;
+        bool const read_only;
 
         virtual std::string to_string(int indent = 0) const override;
     };
@@ -67,40 +73,105 @@ namespace mirror {
 
     template<typename T>
     inline property_ptr make_property(std::string name) {
-        auto res = std::make_shared<property_info>(std::move(name), typeid(T));
-        res->read_only = std::is_const<T>::value;
-        return res;
+        auto read_only = std::is_const<T>::value;
+        return std::make_shared<property_info>(std::move(name), typeid(T), read_only);
     }
 
     struct MIRROR_API method_info : name_type_info {
-        inline method_info(std::string n, std::type_info const& t) : name_type_info(std::move(n), t) { }
+        typedef std::function<value(context& ctx, value const& obj, values const& args)> invoke_type;
+
+        inline method_info(
+            std::string n, std::type_info const& t,
+            size_t a, invoke_type i
+        ) : name_type_info(std::move(n), t), num_args(a), invoke(std::move(i)) { }
+
+        size_t const num_args;
+        invoke_type const invoke;
 
         virtual std::string to_string(int indent = 0) const override;
     };
     typedef std::shared_ptr<method_info> method_ptr;
 
     template<typename T>
-    inline method_ptr make_method(std::string name) {
-        auto res = std::make_shared<method_info>(std::move(name), typeid(T));
-        return res;
+    inline method_ptr make_method(std::string name, void (T::*method)()) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
     }
-    
+
+    template<typename T>
+    inline method_ptr make_method(std::string name, void (T::*method)() const) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
+    }
+
+    template<typename T, typename RESULT>
+    inline method_ptr make_method(std::string name, RESULT (T::*method)()) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
+    }
+
+    template<typename T, typename RESULT>
+    inline method_ptr make_method(std::string name, RESULT (T::*method)() const) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
+    }
+
+    template<typename T, typename RESULT, typename ARG1>
+    inline method_ptr make_method(std::string name, RESULT (T::*method)(ARG1)) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
+    }
+
+    template<typename T, typename RESULT, typename ARG1>
+    inline method_ptr make_method(std::string name, RESULT (T::*method)(ARG1) const) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
+    }
+
+    template<typename T, typename RESULT, typename ARG1, typename ARG2>
+    inline method_ptr make_method(std::string name, RESULT (T::*method)(ARG1, ARG2)) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
+    }
+
+    template<typename T, typename RESULT, typename ARG1, typename ARG2>
+    inline method_ptr make_method(std::string name, RESULT (T::*method)(ARG1, ARG2) const) {
+        auto invoke = [=](context& ctx, value const& obj, values const& args) -> value {
+            throw std::runtime_error(std::string("not implemented for: ") + typeid(method).name());
+        };
+        return std::make_shared<method_info>(std::move(name), typeid(method), 0, std::move(invoke));
+    }
+
     struct MIRROR_API class_info_base : name_type_info {
         inline class_info_base(std::string n, std::type_info const& t) : name_type_info(std::move(n), t) { }
 
         std::shared_ptr<class_info_base> base_class;
 
-        template<typename T>
-        inline void add_property_impl(std::string name) { add_property_impl(make_property<T>(std::move(name))); }
-        void add_property_impl(property_ptr p);
-        property_ptr find_property_by_name(std::string const& name, bool search_base = false) const;
         std::vector<property_ptr> properties;
+        property_ptr find_property_by_name(std::string const& name, bool search_base = false) const;
 
-        template<typename T>
-        inline void add_method_impl(std::string name) { methods.emplace_back(make_method<T>(std::move(name))); }
         std::vector<method_ptr> methods;
+        value invoke(context& ctx, value const& obj, std::string const& method, values const& args) const;
 
         virtual std::string to_string(int indent = 0) const override;
+
+    protected:
+        void add_property_impl(property_ptr p);
+        void add_method_impl(method_ptr m);
     };
     typedef std::shared_ptr<class_info_base> class_base_ptr;
 
@@ -110,34 +181,34 @@ namespace mirror {
 
         template<typename MEMBER>
         inline void add_property(std::string name, MEMBER (T::*member)) {
-            add_property_impl<MEMBER>(std::move(name));
+            add_property_impl(make_property<MEMBER>(std::move(name)));
         }
 
         template<typename RESULT>
         void add_method(std::string name, RESULT (T::*method)()) {
-            add_method_impl<RESULT (T::*)()>(std::move(name));
+            add_method_impl(make_method(std::move(name), method));
         }
         template<typename RESULT>
         void add_method(std::string name, RESULT (T::*method)() const) {
-            add_method_impl<RESULT (T::*)() const>(std::move(name));
+            add_method_impl(make_method(std::move(name), method));
         }
 
         template<typename RESULT, typename ARG1>
         void add_method(std::string name, RESULT (T::*method)(ARG1)) {
-            add_method_impl<RESULT (T::*)(ARG1)>(std::move(name));
+            add_method_impl(make_method(std::move(name), method));
         }
         template<typename RESULT, typename ARG1>
         void add_method(std::string name, RESULT (T::*method)(ARG1) const) {
-            add_method_impl<RESULT (T::*)(ARG1) const>(std::move(name));
+            add_method_impl(make_method(std::move(name), method));
         }
 
         template<typename RESULT, typename ARG1, typename ARG2>
         void add_method(std::string name, RESULT (T::*method)(ARG1, ARG2)) {
-            add_method_impl<RESULT (T::*)(ARG1, ARG2)>(std::move(name));
+            add_method_impl(make_method(std::move(name), method));
         }
         template<typename RESULT, typename ARG1, typename ARG2>
         void add_method(std::string name, RESULT (T::*method)(ARG1, ARG2) const) {
-            add_method_impl<RESULT (T::*)(ARG1, ARG2) const>(std::move(name));
+            add_method_impl(make_method(std::move(name), method));
         }
 
     };
@@ -158,8 +229,17 @@ namespace mirror {
         inline class_base_ptr find_class_by_type() const { return find_class_by_type(typeid(T)); }
         class_base_ptr find_class_by_type(std::type_info const& type) const;
 
+        value invoke(context& ctx, value const& obj, std::string const& method, values const& args) const;
+
         std::vector<class_base_ptr> classes;
     };
+
+
+
+
+
+
+
 
 } // namespace mirror
 
