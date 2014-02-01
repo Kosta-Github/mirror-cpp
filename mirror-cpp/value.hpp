@@ -37,8 +37,8 @@ namespace mirror {
         typedef std::vector<value>              array_t;
         typedef std::map<std::string, value>    dict_t;
 
-        inline          value()                     : m_obj(),                                                  m_type(&typeid(std::nullptr_t))                     { }
-        inline explicit value(std::nullptr_t)       : m_obj(),                                                  m_type(&typeid(std::nullptr_t))                     { }
+        inline          value()                     : m_obj(),                                                  m_type(&typeid(nullptr))                            { }
+        inline explicit value(std::nullptr_t)       : m_obj(),                                                  m_type(&typeid(nullptr))                            { }
         inline explicit value(bool v)               : m_obj(std::make_shared<bool>(v)),                         m_type(&typeid(bool))                               { }
         inline explicit value(int64_t v)            : m_obj(std::make_shared<int64_t>(v)),                      m_type(&typeid(int64_t))                            { }
         inline explicit value(double v)             : m_obj(std::make_shared<double>(v)),                       m_type(&typeid(double))                             { }
