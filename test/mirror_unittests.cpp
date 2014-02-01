@@ -48,6 +48,8 @@ struct A {
 };
 
 struct B : A {
+    B() : A(), b(15.10), b_const(24.06) { }
+
     double b;
     double const b_const;
 
