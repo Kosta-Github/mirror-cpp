@@ -21,7 +21,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
-#include <catch/catch.hpp>
+#include <cute/cute.hpp>
 
 #include <mirror-cpp/mirror.hpp>
 
@@ -62,35 +62,35 @@ struct C : B {
     std::string const c_const;
 };
 
-CATCH_TEST_CASE(
+CUTE_TEST(
     "Test registering a class",
-    "[mirror][register_class]"
+    "[mirror],[register_class]"
 ) {
     auto reg = mirror::class_registry();
 
-    CATCH_CHECK_FALSE(reg.find_class_by_name("A").get());
-    CATCH_CHECK_FALSE(reg.find_class_by_type<A>().get());
+    CUTE_ASSERT(!reg.find_class_by_name("A").get());
+    CUTE_ASSERT(!reg.find_class_by_type<A>().get());
 
     auto a = mirror::make_class<A>("A");
-    CATCH_REQUIRE(a.get());
+    CUTE_ASSERT(a.get());
 
     reg.add_class(a);
-    CATCH_CHECK(reg.find_class_by_name("A").get() == a.get());
-    CATCH_CHECK(reg.find_class_by_type<A>().get() == a.get());
+    CUTE_ASSERT(reg.find_class_by_name("A").get() == a.get());
+    CUTE_ASSERT(reg.find_class_by_type<A>().get() == a.get());
 }
 
 template<typename T1, typename T2>
 static void check_prop(bool const read_only) {
     auto p = mirror::make_property<T1>("prop");
-    CATCH_REQUIRE(p.get());
-    CATCH_CHECK(p->name == "prop");
-    CATCH_CHECK(p->type == typeid(T2));
-    CATCH_CHECK(p->read_only == read_only);
+    CUTE_ASSERT(p.get());
+    CUTE_ASSERT(p->name == "prop");
+    CUTE_ASSERT(p->type == typeid(T2));
+    CUTE_ASSERT(p->read_only == read_only);
 }
 
-CATCH_TEST_CASE(
+CUTE_TEST(
     "Test creating a property",
-    "[mirror][make_property]"
+    "[mirror],[make_property]"
 ) {
     check_prop<decltype(A::a),          int>(               false);
     check_prop<decltype(A::a_const),    int const>(         true);
@@ -104,39 +104,39 @@ CATCH_TEST_CASE(
     check_prop<decltype(C::c_const),    std::string const>( true);
 }
 
-CATCH_TEST_CASE(
+CUTE_TEST(
     "Test registering a property",
-    "[mirror][register_property]"
+    "[mirror],[register_property]"
 ) {
     auto a = mirror::make_class<A>("A");
     a->add_property("a", &A::a);
-    CATCH_CHECK(a->find_property_by_name("a").get());
+    CUTE_ASSERT(a->find_property_by_name("a").get());
 }
 
-CATCH_TEST_CASE(
+CUTE_TEST(
     "Test registering two properties",
-    "[mirror][register_property]"
+    "[mirror],[register_property]"
 ) {
     auto a = mirror::make_class<A>("A");
     a->add_property("a", &A::a);
-    CATCH_CHECK(a->find_property_by_name("a").get());
+    CUTE_ASSERT(a->find_property_by_name("a").get());
     a->add_property("a_const", &A::a_const);
-    CATCH_CHECK(a->find_property_by_name("a").get());
-    CATCH_CHECK(a->find_property_by_name("a_const").get());
+    CUTE_ASSERT(a->find_property_by_name("a").get());
+    CUTE_ASSERT(a->find_property_by_name("a_const").get());
 }
 
-CATCH_TEST_CASE(
+CUTE_TEST(
     "Test registering properties",
-    "[mirror][register_property]"
+    "[mirror],[register_property]"
 ) {
     auto a = mirror::make_class<A>("A");
     a->add_property("a", &A::a);
     a->add_property("a_const", &A::a_const);
 
-    CATCH_CHECK(a->find_property_by_name("a").get());
-    CATCH_CHECK(a->find_property_by_name("a_const").get());
-    CATCH_CHECK_FALSE(a->find_property_by_name("b").get());
-    CATCH_CHECK_FALSE(a->find_property_by_name("b_const").get());
+    CUTE_ASSERT(a->find_property_by_name("a").get());
+    CUTE_ASSERT(a->find_property_by_name("a_const").get());
+    CUTE_ASSERT(!a->find_property_by_name("b").get());
+    CUTE_ASSERT(!a->find_property_by_name("b_const").get());
 
     auto b = mirror::make_class<B>("B", a);
     b->add_property("b", &B::b);
@@ -144,20 +144,20 @@ CATCH_TEST_CASE(
     b->add_property("a2", &B::a2);
     b->add_property("a2_const", &B::a2_const);
 
-    CATCH_CHECK(b->find_property_by_name("b").get());
-    CATCH_CHECK(b->find_property_by_name("b_const").get());
-    CATCH_CHECK(b->find_property_by_name("a2").get());
-    CATCH_CHECK(b->find_property_by_name("a2_const").get());
+    CUTE_ASSERT(b->find_property_by_name("b").get());
+    CUTE_ASSERT(b->find_property_by_name("b_const").get());
+    CUTE_ASSERT(b->find_property_by_name("a2").get());
+    CUTE_ASSERT(b->find_property_by_name("a2_const").get());
 
-    CATCH_CHECK_FALSE(b->find_property_by_name("a").get());         // "a" is in the base class
-    CATCH_CHECK_FALSE(b->find_property_by_name("a_const").get());   // "a" is in the base class
-    CATCH_CHECK(b->find_property_by_name("a", true).get());         // "a" is in the base class
-    CATCH_CHECK(b->find_property_by_name("a_const", true).get());   // "a" is in the base class
+    CUTE_ASSERT(!b->find_property_by_name("a").get());         // "a" is in the base class
+    CUTE_ASSERT(!b->find_property_by_name("a_const").get());   // "a" is in the base class
+    CUTE_ASSERT(b->find_property_by_name("a", true).get());         // "a" is in the base class
+    CUTE_ASSERT(b->find_property_by_name("a_const", true).get());   // "a" is in the base class
 }
 
-CATCH_TEST_CASE(
+CUTE_TEST(
     "Test registering a method",
-    "[mirror][register_method]"
+    "[mirror],[register_method]"
 ) {
     auto ctx = mirror::make_class<A>("A");
 
@@ -179,9 +179,9 @@ CATCH_TEST_CASE(
     std::cout << ctx->to_string() << std::endl;
 }
 
-CATCH_TEST_CASE(
+CUTE_TEST(
     "Test invoking a simple method",
-    "[mirror][method][invoke]"
+    "[mirror],[method],[invoke]"
 ) {
     auto cls = mirror::make_class<A>("A");
     cls->add_method("func_a", &A::func_a);

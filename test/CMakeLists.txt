@@ -4,8 +4,7 @@ project(mirror-cpp CXX)
 message("configure: mirror-cpp unittests")
 
 # configure catch
-include_directories("${HTTP_CPP_3RD_PARTY_DIR}/catch/include")
-add_definitions(-DCATCH_CONFIG_PREFIX_ALL)
+include_directories("${HTTP_CPP_3RD_PARTY_DIR}/cute/")
 
 add_executable(
 	mirror_unittests
